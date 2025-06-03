@@ -41,7 +41,7 @@ bool MotionNode::initialize() {
     loadParameters();
 
     cmdVelSub_ = nh_.subscribe(cmdVelTopic_, 10, &MotionNode::cmdVelCallback, this);
-    diagPub_ = nh_.advertise<diagnostic_msgs::DiagnosticArray>('/motion/diagnostics', 1);
+    diagPub_ = nh_.advertise<diagnostic_msgs::DiagnosticArray>("/motion/diagnostics", 1);
     emergencySrv_ = nh_.advertiseService("emergency_stop", &MotionNode::emergencyStopCallback, this);
 
     fs::path logDir = fs::current_path() / "logs" / "motion";

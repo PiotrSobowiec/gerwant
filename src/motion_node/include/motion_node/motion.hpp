@@ -1,29 +1,56 @@
 // motion.hpp
 #pragma once
 
-#include <ros/ros.h>
-#include <geometry_msgs/Twist.h>
+#include <rclcpp/rclcpp.hpp>
+#include <geometry_msgs/msg/twist.hpp>
+#include <std_srvs/srv/set_bool.hpp>
+#include <diagnostic_msgs/msg/diagnostic_array.hpp>
+#include <diagnostic_msgs/msg/diagnostic_status.hpp>
+#include <vector>
+#include <string>
+#include <fstream>
 
-// ROS parameters (~ namespace)
-// wheel_pins: list<int> length 12 (4 motors*3)
-// servo_pin: int
-// cmd_vel_topic: string (domyślnie "/cmd_vel")
-// control_rate: double (Hz)
+class Motor;           // zadeklaruj lub do#include "Motor.hpp"
+class ServoController; // podobnie
 
-class MotionNode {
+class MotionNode : public rclcpp::Node {
 public:
-    MotionNode(ros::NodeHandle& nh);
-    bool initialize(); // wczytuje parametry oraz wiringPi
-    void spin();       // subskrypcja cmd_vel i sterowanie silnikami
+    explicit MotionNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+    bool initialize();
+    void spin();
 
 private:
-    void cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
-    void loadParameters();
+  void loadParameters();
+  void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
+  void emergencyStopCallback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request,
+                             std::shared_ptr<std_srvs::srv::SetBool::Response> response);
+  void stopMotors();
 
-    ros::NodeHandle nh_;
-    ros::Subscriber cmdVelSub_;
-    std::vector<Motor> motors_;  // 4 silniki
-    ServoController servo_;
-    std::string cmdVelTopic_;
-    double controlRate_;
+  // --- pola ROS 2 ---
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmdVelSub_;
+  rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diagPub_;
+  rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr emergencySrv_;
+  rclcpp::TimerBase::SharedPtr timer_;
+
+  // --- pola sprzętowe i wewnętrzne ---
+  std::vector<Motor> motors_;
+  ServoController servo_;
+
+  // --- parametry (wczytane z ROS 2‐owych parametrów) ---
+  std::string cmdVelTopic_;
+  double controlRate_;
+  double cmdTimeout_;
+  double maxSpeed_;
+  double maxAccel_;
+
+  // --- stan wewnętrzny ---
+  double lastCmdTime_;
+  bool emergencyStop_;
+  double desiredLinear_;
+  double desiredAngular_;
+  double currentLinear_;
+
+  // --- logowanie do CSV ---
+  std::ofstream cmdCsv_;
+  std::ofstream stateCsv_;
 };

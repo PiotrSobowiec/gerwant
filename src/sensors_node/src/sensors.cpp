@@ -61,10 +61,8 @@ bool SensorsNode::initialize() {
     imuCsv_.open(imuFile, std::ios::out);
     if (distCsv_ && imuCsv_) {
         // Write headers
-        distCsv_ << "timestamp,front,front_left,front_right,rear
-";
-        imuCsv_  << "timestamp,angleX,angleY,angleZ
-";
+        distCsv_ << "timestamp,front,front_left,front_right,rear\n";
+        imuCsv_  << "timestamp,angleX,angleY,angleZ\n";
     } else {
         ROS_WARN("Failed to open log files in %s", logDir.c_str());
     }

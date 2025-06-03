@@ -24,4 +24,8 @@ ament_target_dependencies(sensors_node
   diagnostic_msgs
 )
 
+install(TARGETS sensors_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_package()

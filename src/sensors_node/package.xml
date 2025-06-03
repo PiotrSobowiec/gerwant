@@ -2,7 +2,7 @@
 <package format="3">
   <name>sensors_node</name>
   <version>0.1.0</version>
-  <description>Sensors data publisher (ROS 2)</description>
+  <description>Sensors data publisher (ROS 2 Humble)</description>
   <maintainer email="you@domain">You</maintainer>
   <license>MIT</license>
 

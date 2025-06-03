@@ -1,31 +1,40 @@
-// sensors.hpp
 #pragma once
 
-#include <ros/ros.h>
-#include <vector>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/float32.hpp>
+#include <sensor_msgs/msg/vector3.hpp>
+#include <diagnostic_msgs/msg/diagnostic_array.hpp>
+#include <diagnostic_msgs/msg/diagnostic_status.hpp>
 
-// ROS parameters (~ namespace)
-// trig_pins: list<int> length 4
-// echo_pins: list<int> length 4
-// imu_i2c_address: int (domyślnie 0x68)
-// read_rate: double (Hz)
+#include <vector>
+#include <fstream>
 
 // Pozycja czujnika na pojeździe
-enum SensorPosition { FRONT=0, FRONT_LEFT=1, FRONT_RIGHT=2, REAR=3 };
+enum SensorPosition { FRONT = 0, FRONT_LEFT = 1, FRONT_RIGHT = 2, REAR = 3 };
 
-class SensorsNode {
+// Forward‐deklaracje klas do obsługi hardware’u
+class UltrasonicSensor; // np. w UltrasonicSensor.hpp
+class IMUSensor;        // np. w IMUSensor.hpp
+
+class SensorsNode : public rclcpp::Node {
 public:
-    SensorsNode(ros::NodeHandle& nh);
-    bool initialize(); // wczytuje parametry, inicjalizuje hardware
-    void spin();       // petla odczytów i publikacji
-private:
-    void loadParameters();
-    void readSensors();
+  explicit SensorsNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  bool initialize();
+  void spin();
 
-    ros::NodeHandle nh_;
-    std::vector<UltrasonicSensor> ultrasonicSensors_;
-    IMUSensor imuSensor_;
-    ros::Publisher distPub_[4];       // front, fl, fr, rear
-    ros::Publisher imuPub_;           // geometry_msgs/Vector3
-    double readRate_;
+private:
+  void loadParameters();
+  void readSensors();
+
+  rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr distPub_[4];
+  rclcpp::Publisher<sensor_msgs::msg::Vector3>::SharedPtr imuPub_;
+  rclcpp::Publisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr diagPub_;
+  rclcpp::TimerBase::SharedPtr timer_;
+
+  std::vector<UltrasonicSensor> ultrasonicSensors_;
+  IMUSensor imuSensor_;
+  
+  double readRate_;
+  std::ofstream distCsv_;
+  std::ofstream imuCsv_;
 };

@@ -2,15 +2,16 @@
 <package format="3">
   <name>face_marker_tracker</name>
   <version>0.1.0</version>
-  <description>Face + ArUco marker tracking (ROS 2)</description>
+  <description>Face + ArUco marker tracker (ROS 2 Humble)</description>
+
   <maintainer email="you@domain">You</maintainer>
   <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
-  <depend>sensor_msgs</depend>
   <depend>cv_bridge</depend>
   <depend>image_transport</depend>
   <depend>OpenCV</depend>

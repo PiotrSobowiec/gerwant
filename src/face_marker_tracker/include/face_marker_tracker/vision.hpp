@@ -1,71 +1,79 @@
-// vision.hpp
 #pragma once
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
+#include <image_transport/image_transport.hpp>
+#include <cv_bridge/cv_bridge.h>
+#include <std_msgs/msg/header.hpp>
+#include <geometry_msgs/msg/point.hpp>
+
 #include <opencv2/opencv.hpp>
-#include <opencv2/dnn.hpp>
+#include <opencv2/objdetect.hpp>
+#include <opencv2/tracking.hpp>
+#include <opencv2/aruco.hpp>
+#include <opencv2/face.hpp>
+
+#include <filesystem>
 #include <string>
 #include <vector>
+#include <chrono>
+#include <fstream>
 
-// ROS parameters (private namespace, e.g., ~camera_topic)
-// camera_topic: std::string (domyślnie "/camera/image_raw")
-// detector_type: int (0=HAAR_CASCADE,1=LBP_CASCADE,2=SSD_MOBILENET)
-// tracker_type: int (0=CSRT_TRACKER,1=KCF_TRACKER,2=MOSSE_TRACKER)
-// detection_threshold: double (0.0-1.0, domyślnie 0.5)
-
-// Typy detektorów twarzy
-enum FaceDetectorType {
-    HAAR_CASCADE = 0,
-    LBP_CASCADE = 1,
-    SSD_MOBILENET = 2
+// Definicja wyjściowej struktury, niezależnie od ROS
+struct VisionResult {
+  int frameNumber;
+  float fps;
+  std::string status;
+  std::string personName;
+  float confidence;
+  cv::Rect faceRect;
+  cv::Point2f markerCenter;
 };
 
-// Typy algorytmów śledzenia
-enum TrackerType {
-    CSRT_TRACKER = 0,
-    KCF_TRACKER = 1,
-    MOSSE_TRACKER = 2
-};
+using ResultCallback = std::function<void(const VisionResult&)>;
 
-// Struktura wyników detekcji/śledzenia
-typedef struct {
-    int frameNumber;
-    float fps;
-    std::string status;      // "Detecting", "Tracking", "MarkerFound"
-    std::string personName;
-    float confidence;
-    cv::Rect faceRect;
-    cv::Point2f markerCenter;
-} VisionResult;
-
-// Klasa modułu wizyjnego obsługująca detekcję i śledzenie
-typedef void (*ResultCallback)(const VisionResult&);
 class VisionSystem {
 public:
-    VisionSystem(ros::NodeHandle& nh);
-    bool initialize(); // wczytuje parametry i subskrybuje obraz
-    void registerCallback(ResultCallback cb);
-    void spinOnce();   // przetwarza ostatnią klatkę
-    void shutdown();
+  explicit VisionSystem(rclcpp::Node::SharedPtr node);
+  bool initialize(int model_choice, int tracker_choice);
+  void registerCallback(ResultCallback cb);
+  void spinOnce();
+  void shutdown();
 
 private:
-    void imageCallback(const sensor_msgs::ImageConstPtr& msg);
-    void loadParameters();
+  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr msg);
+  void loadParameters();
 
-    ros::NodeHandle nh_;
-    ros::Subscriber imageSub_;
-    FaceDetectorType detectorType_;
-    TrackerType trackerType_;
-    double detectionThreshold_;
-    std::string cameraTopic_;
+  rclcpp::Node::SharedPtr node_;
+  image_transport::Subscriber imgSub_;
+  image_transport::Publisher imgPub_;  // jeśli np. chcesz publikować z nałożonymi ramkami
+  ResultCallback callback_;
 
-    cv::CascadeClassifier haarCascade_;
-    cv::CascadeClassifier lbpCascade_;
-    cv::dnn::Net ssdNet_;
-    cv::Ptr<cv::Tracker> tracker_;
-    bool isTracking_;
-    cv::Mat lastFrame_;
+  int model_choice;
+  int tracker_choice;
+  std::string cameraTopic_;
 
-    ResultCallback callback_;
+  cv::CascadeClassifier face_cascade;
+  cv::Ptr<cv::face::FaceRecognizer> face_model;
+  std::map<int, std::string> label_names;
+  cv::dnn::Net ssd_net;
+
+  cv::Ptr<cv::Tracker> tracker;
+  cv::Ptr<cv::aruco::Dictionary> dictionary;
+
+  bool face_verified;
+  bool is_tracking;
+  int confirmed_label;
+  std::string recognized_name;
+  float last_confidence;
+
+  cv::Rect target_box;
+
+  // logowanie
+  std::ofstream log_file_;
+  int frame_counter_;
+  double last_fps_;
+  int test_id_;
+  std::chrono::steady_clock::time_point last_time_;
+
+  // inne pola np. timeouty, czasy wykonania
 };
-
