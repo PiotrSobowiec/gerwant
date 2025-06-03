@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>autonomus</name>
+  <version>0.1.0</version>
+  <description>Autonomous state machine (ROS 2)</description>
+  <maintainer email="you@domain">You</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>face_marker_tracker</depend>
+  <depend>dynamic_reconfigure</depend>
+</package>
